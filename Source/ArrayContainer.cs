@@ -12,8 +12,7 @@ namespace BitsetsNET
         private const int DEFAULT_INIT_SIZE = 4;
         internal const int DEFAULT_MAX_SIZE = 4096;
 
-        public int Cardinality;
-        public ushort[] Content;
+        private ushort[] _content;
 
         public ArrayContainer() : this(DEFAULT_INIT_SIZE) {}
         
@@ -34,6 +33,20 @@ namespace BitsetsNET
             this.Cardinality = newContent.Length;
             this.Content = newContent;
         }
+
+        /// <summary>
+        /// Computes the distinct number of short values in the container. Can be
+        /// expected to run in constant time.
+        /// </summary>
+        /// <returns>The cardinality</returns>
+        public override int Cardinality { get; set; }
+
+        public ushort[] Content
+        {
+            get { return _content; }
+            set { _content = value; }
+        }
+
 
         /// <summary>
         /// Computes the bitwise AND of this container with another
@@ -132,14 +145,14 @@ namespace BitsetsNET
         /// <returns>A new container with the differences</returns>
         public override Container AndNot(ArrayContainer x)
         {
-            int desiredCapacity = this.GetCardinality();
+            int desiredCapacity = this.Cardinality;
             var answer = new ArrayContainer(desiredCapacity);
 
             // Compute the cardinality of the new container
             answer.Cardinality = Utility.UnsignedDifference(this.Content,
                                                             desiredCapacity,
                                                             x.Content,
-                                                            x.GetCardinality(),
+                                                            x.Cardinality,
                                                             answer.Content);
             return answer;
         }
@@ -289,9 +302,9 @@ namespace BitsetsNET
         public override Container IAndNot(ArrayContainer x)
         {
             this.Cardinality = Utility.UnsignedDifference(this.Content, 
-                                                          this.GetCardinality(), 
+                                                          this.Cardinality, 
                                                           x.Content, 
-                                                          x.GetCardinality(), 
+                                                          x.Cardinality, 
                                                           this.Content);
             return this;
         }
@@ -335,7 +348,7 @@ namespace BitsetsNET
                         return ToBitsetContainer().INot(firstOfRange, lastOfRange);
                     }
                     // Change the size of the array based on the new cardinality
-                    Array.Resize(ref Content, newCardinality);
+                    Array.Resize(ref _content, newCardinality);
                 }
                 // slide right the contents after the range
                 Array.Copy(Content, 
@@ -437,7 +450,7 @@ namespace BitsetsNET
             {
                 newCapacity = ArrayContainer.DEFAULT_MAX_SIZE;
             }
-            Array.Resize(ref this.Content, newCapacity);
+            Array.Resize(ref _content, newCapacity);
         }
 
         //TODO: This needs to be optimized. It should increase capacity by more than just 1 each time
@@ -445,7 +458,7 @@ namespace BitsetsNET
         {
             int currCapacity = this.Content.Length;
             //TODO: Tori says this may be jank
-            Array.Resize(ref this.Content, currCapacity + 1);
+            Array.Resize(ref _content, currCapacity + 1);
         }
 
         public BitsetContainer ToBitsetContainer()
@@ -483,12 +496,12 @@ namespace BitsetsNET
         public override Container And(ArrayContainer value2)
         {
             ArrayContainer value1 = this;
-            int desiredCapacity = Math.Min(value1.GetCardinality(), value2.GetCardinality());
+            int desiredCapacity = Math.Min(value1.Cardinality, value2.Cardinality);
             ArrayContainer answer = new ArrayContainer(desiredCapacity);
             answer.Cardinality = Utility.UnsignedIntersect2by2(value1.Content,
-                                                               value1.GetCardinality(), 
+                                                               value1.Cardinality, 
                                                                value2.Content,
-                                                               value2.GetCardinality(), 
+                                                               value2.Cardinality, 
                                                                answer.Content);
             return answer;
         }
@@ -528,16 +541,6 @@ namespace BitsetsNET
         }
 
         /// <summary>
-        /// Computes the distinct number of short values in the container. Can be
-        /// expected to run in constant time.
-        /// </summary>
-        /// <returns>The cardinality</returns>
-        public override int GetCardinality()
-        {
-            return Cardinality;
-        }
-
-        /// <summary>
         /// Computes the in-place bitwise AND of this container with another
         /// (intersection). The current container is generally modified, whereas
         /// the provided container (x) is unaffected. May generate a new container.
@@ -569,9 +572,9 @@ namespace BitsetsNET
         public override Container IAnd(ArrayContainer other)
         {
             Cardinality = Utility.UnsignedIntersect2by2(Content,
-                                                        GetCardinality(), 
+                                                        Cardinality, 
                                                         other.Content,
-                                                        other.GetCardinality(), 
+                                                        other.Cardinality, 
                                                         Content);
             return this;
         }
@@ -640,7 +643,7 @@ namespace BitsetsNET
         public override Container Or(ArrayContainer x)
         {
             ArrayContainer value1 = this;
-            int totalCardinality = value1.GetCardinality() + x.GetCardinality();
+            int totalCardinality = value1.Cardinality + x.Cardinality;
             if (totalCardinality > DEFAULT_MAX_SIZE)
             {
                 // it could be a bitmap!
@@ -675,9 +678,9 @@ namespace BitsetsNET
                                                         // totalCardinality);
                 ArrayContainer answer = new ArrayContainer(desiredCapacity);
                 answer.Cardinality = Utility.UnsignedUnion2by2(value1.Content,
-                                                               value1.GetCardinality(), 
+                                                               value1.Cardinality, 
                                                                x.Content,
-                                                               x.GetCardinality(), 
+                                                               x.Cardinality, 
                                                                answer.Content);
                 return answer;
             }
@@ -740,6 +743,15 @@ namespace BitsetsNET
         public override ushort Select(int j)
         {
             return this.Content[j];
+        }
+
+        /// <summary>
+        /// Computes an approximation of the memory usage of this container.
+        /// </summary>
+        /// <returns>Estimated memory usage in bytes.</returns>
+        public override int SizeInBytes()
+        {
+            return this.Cardinality * 2 + 4;
         }
 
         public override bool Equals(Object o)

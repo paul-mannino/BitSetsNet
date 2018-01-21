@@ -11,9 +11,6 @@ namespace BitsetsNET
     {
         protected static int MAX_CAPACITY = 1 << 16;
 
-        public int Cardinality;
-        public long[] Bitmap;
-
         public BitsetContainer()
         {
             this.Cardinality = 0;
@@ -25,7 +22,11 @@ namespace BitsetsNET
             this.Cardinality = cardinality;
             this.Bitmap = bitmap;
         }
-        
+
+        public override int Cardinality { get; set; }
+
+        public long[] Bitmap { get; set; }
+
         /// <summary>
         /// Recomputes the cardinality of the bitmap.
         /// </summary>
@@ -135,7 +136,7 @@ namespace BitsetsNET
                 return answer;
             }
             ArrayContainer ac = new ArrayContainer(newCardinality);
-            Utility.FillArrayAND(ref ac.Content, this.Bitmap, x.Bitmap);
+            Utility.FillArrayAND(ac.Content, this.Bitmap, x.Bitmap);
             ac.Cardinality = newCardinality;
             return ac;
         }
@@ -281,16 +282,6 @@ namespace BitsetsNET
         }
 
         /// <summary>
-        /// Computes the distinct number of short values in the container. Can be
-        /// expected to run in constant time.
-        /// </summary>
-        /// <returns>The cardinality</returns>
-        public override int GetCardinality()
-        {
-            return Cardinality;
-        }
-
-        /// <summary>
         /// Returns the elements of this BitsetContainer that are not in the
         /// ArrayContainer.
         /// </summary>
@@ -418,7 +409,7 @@ namespace BitsetsNET
                 return this;
             }
             ArrayContainer ac = new ArrayContainer(newCardinality);
-            Utility.FillArrayAND(ref ac.Content, Bitmap, other.Bitmap);
+            Utility.FillArrayAND(ac.Content, Bitmap, other.Bitmap);
             ac.Cardinality = newCardinality;
             return ac;
         }
@@ -580,7 +571,7 @@ namespace BitsetsNET
             Utility.ResetBitmapRange(Bitmap, begin, end);
             ComputeCardinality();
 
-            if (GetCardinality() <= ArrayContainer.DEFAULT_MAX_SIZE)
+            if (Cardinality <= ArrayContainer.DEFAULT_MAX_SIZE)
             {
                 return ToArrayContainer();
             }
@@ -606,6 +597,15 @@ namespace BitsetsNET
                 leftover -= w;
             }
             throw new ArgumentOutOfRangeException("Insufficient cardinality.");
+        }
+
+        /// <summary>
+        /// Computes an approximation of the memory usage of this container.
+        /// </summary>
+        /// <returns>Estimated memory usage in bytes.</returns>
+        public override int SizeInBytes()
+        {
+            return this.Bitmap.Length * 8;
         }
 
         public override bool Equals(Object o)

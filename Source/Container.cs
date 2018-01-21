@@ -131,6 +131,13 @@ namespace BitsetsNET
         public abstract bool Contains(ushort x);
 
         /// <summary>
+        /// Computes the distinct number of short values in the container. Can be
+        /// expected to run in constant time.
+        /// </summary>
+        /// <returns>The cardinality</returns>
+        public abstract int Cardinality { get; set; }
+
+        /// <summary>
         /// Fill the least significant 16 bits of the integer array, starting at
         /// index i, with the short values from this container. The caller is
         /// responsible to allocate enough room. The most significant 16 bits of
@@ -140,13 +147,6 @@ namespace BitsetsNET
         /// <param name="i">Starting index</param>
         /// <param name="mask">Indicates most significant bits</param>
         public abstract void FillLeastSignificant16bits(int[] x, int i, int mask);
-
-        /// <summary>
-        /// Computes the distinct number of short values in the container. Can be
-        /// expected to run in constant time.
-        /// </summary>
-        /// <returns>The cardinality</returns>
-        public abstract int GetCardinality();
 
         /// <summary>
         /// Computes the in-place bitwise AND of this container with another
@@ -333,11 +333,23 @@ namespace BitsetsNET
         public abstract Container Remove(ushort begin, ushort end);
 
         /// <summary>
+        /// Convert to RunContainer when the result is smaller.
+        /// </summary>
+        /// <returns>The new, more space-efficient container.</returns>
+        public abstract Container RunOptimize();
+
+        /// <summary>
         /// Return the jth value of the container.
         /// </summary>
         /// <param name="j">Index of the value </param>
         /// <returns>The jth value of the container</returns>
         public abstract ushort Select(int j);
+
+        /// <summary>
+        /// Computes an approximation of the memory usage of this container.
+        /// </summary>
+        /// <returns>Estimated memory usage in bytes.</returns>
+        public abstract int SizeInBytes();
 
         /// <summary>
         /// Serialize this container in a binary format.

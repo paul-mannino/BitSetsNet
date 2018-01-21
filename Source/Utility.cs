@@ -35,6 +35,11 @@ namespace BitsetsNET
             return (int) x;
         }
 
+        public static int ToIntUnsigned(short x)
+        {
+            return x & 0xFFFF;
+        }
+
         public static void FlipBitsetRange(long[] bitset, int start, int end)
         {
             if (start == end)
@@ -142,7 +147,7 @@ namespace BitsetsNET
         /// <param name="container">Container to write to</param>
         /// <param name="bitmap1">First bitmap</param>
         /// <param name="bitmap2">Second bitmap</param>
-        public static void FillArrayAND(ref ushort[] container, long[] bitmap1, long[] bitmap2)
+        public static void FillArrayAND(ushort[] container, long[] bitmap1, long[] bitmap2)
         {
             int pos = 0;
 
@@ -709,6 +714,20 @@ namespace BitsetsNET
             }
 
             bitmap[endWord] |= (long)(~0UL >> -end);
+        }
+
+        public static int NumberOfTrailingZeros(long n)
+        {
+            int mask = 1;
+            for (int i = 0; i < 64; i++, mask <<= 1)
+            {
+                if ((n & mask) != 0)
+                {
+                    return i;
+                }
+            }
+
+            return 64;
         }
     }
 }
