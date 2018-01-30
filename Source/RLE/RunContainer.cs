@@ -150,7 +150,50 @@ namespace BitsetsNET
 
         public override Container Add(ushort x)
         {
-            throw new NotImplementedException();
+            int index = Utility.UnsignedBinarySearch(valuesLength, 0, runCount, x);
+            if (index >= 0) {
+                return this;
+            }
+            index = -index - 2;
+            if (index >= 0) {
+                int offset = Utility.ToIntUnsigned(x) - Utility.ToIntUnsigned(getValue(index));
+                int len = Utility.ToIntUnsigned(getLength(index));
+                if (offset <= len) {
+                    return this;
+                }
+                if (offset == len + 1) {
+                    if (index + 1 < runCount) {
+                        if (Utility.ToIntUnsigned(getValue(index + 1)) == Utility.ToIntUnsigned(x) + 1) {
+                            setLength(index,
+                                (short)(getValue(index + 1) + getLength(index + 1) - getValue(index)));
+                            recoverRoomAtIndex(index + 1);
+                            return this; 
+                        }
+                    }
+                    incrementLength(index);
+                    return this;
+                }
+                if (index + 1 < runCount) {
+                    if (Utility.ToIntUnsigned(getValue(index + 1)) == Utility.ToIntUnsigned(x) + 1) {
+                        setValue(index + 1, (short) x);
+                        setLength(index + 1, (short) (getLength(index + 1) + 1));
+                        return this;
+                    }
+                }
+            }
+            if (index == -1) {
+                if (0 < runCount) {
+                    if (getValue(0) == x + 1) {
+                        incrementLength(0);
+                        decrementValue(0);
+                        return this;
+                    }
+                }
+            }
+            makeRoomAtIndex(index + 1);
+            setValue(index + 1, (short) x);
+            setLength(index + 1, (short) 0);
+            return this;
         }
 
         public override Container Add(ushort rangeStart, ushort rangeEnd)
@@ -312,6 +355,26 @@ namespace BitsetsNET
         private void setValue(short[] valuesLength, int index, short v)
         {
             valuesLength[2 * index] = v;
+        }
+
+        private short getValue(int index) {
+            return getValue(valuesLength, index);
+        }
+        
+        private short getValue(short[] valuesLength, int index) {
+            return valuesLength[2 * index];
+        }
+
+        private void incrementLength(int index) {
+            valuesLength[(2 * index) + 1]++;
+        }
+
+        private void incrementValue(int index) {
+            valuesLength[2 * index]++;
+        } 
+
+        private void decrementValue(int index) {
+            valuesLength[2 * index]--;
         }
 
         private short getLength(int index)
